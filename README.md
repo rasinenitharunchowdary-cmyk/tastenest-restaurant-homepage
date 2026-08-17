@@ -1,6 +1,6 @@
 # TasteNest Restaurant Homepage
 
-A responsive, motion-rich React implementation of the **Home-5 / Foodking Home-02** composition from the supplied restaurant Figma board.
+A responsive, motion-rich React implementation of the complete **Home-4** composition from the supplied restaurant Figma board.
 
 ## Live deployment
 
@@ -9,11 +9,11 @@ A responsive, motion-rich React implementation of the **Home-5 / Foodking Home-0
 ## Highlights
 
 - Responsive layouts for desktop, tablet, and mobile
-- GSAP entrance reveals, counters, scroll progress, parallax, and magnetic buttons
+- The complete Home-4 ecommerce sequence: hero, food categories, dual promotions, sponsor rail, offer banner, product grid, combo offer, services, about, flash deals, testimonial, delivery, gallery, and footer
+- GSAP entrance reveals, hover depth, hero parallax, and a polished loader
 - Lenis smooth scrolling
-- Vanta.js + Three.js animated hero ambience, loaded as a split bundle
-- Interactive 3D tilt cards
-- Working mobile menu, product tabs, order drawer, quantity controls, gallery carousel, testimonial slider, newsletter forms, toast feedback, and video-style story modal
+- Vanta.js + Three.js atmospheric texture in the charcoal deal section, loaded as a split bundle
+- Working mobile menu, basket drawer, hero offer selector, food category controls, wish-list controls, order feedback, and newsletter feedback
 - Local Barlow Condensed and Manrope font files
 - Downloaded and compressed WebP food photography
 - Reduced-motion support and accessible labels/landmarks
