@@ -2,6 +2,10 @@
 
 A responsive, motion-rich React implementation of the **Home-5 / Foodking Home-02** composition from the supplied restaurant Figma board.
 
+## Live deployment
+
+[View TasteNest on Netlify](https://tastenest-restaurant-homepage.netlify.app/)
+
 ## Highlights
 
 - Responsive layouts for desktop, tablet, and mobile
