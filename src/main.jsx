@@ -8,11 +8,11 @@ import '@fontsource/barlow-condensed/latin-600.css'
 import '@fontsource/barlow-condensed/latin-700.css'
 import '@fontsource/barlow-condensed/latin-800.css'
 import 'lenis/dist/lenis.css'
-import App from './App.jsx'
+import AppRouter from './AppRouter.jsx'
 import './styles.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <App />
+    <AppRouter />
   </StrictMode>,
 )

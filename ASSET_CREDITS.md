@@ -14,3 +14,6 @@ The food photography in `public/assets` was downloaded from [Unsplash](https://u
 - Grilled chicken: [CDN source](https://images.unsplash.com/photo-1532550907401-a500c9a57435)
 - Tacos: [CDN source](https://images.unsplash.com/photo-1551504734-5ee1c4a1479b)
 - Pasta: [CDN source](https://images.unsplash.com/photo-1551183053-bf91a1d81141)
+- Coffee beans and cup: [Sen on Unsplash](https://unsplash.com/photos/a-cup-of-coffee-beans-on-a-black-background-vdSIGIINA_M)
+- Dark restaurant interior: [Oliver Guhr on Unsplash](https://unsplash.com/photos/a-dimly-lit-restaurant-with-tables-and-chairs-EjHiN2KxTO4)
+- Colourful salad: [abillion on Unsplash](https://unsplash.com/photos/food-in-bowl-BlQc1APEaL0)

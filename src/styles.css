@@ -3014,3 +3014,85 @@ p {
     display: none;
   }
 }
+/* Route-level loading and fallback states */
+.route-loader,
+.route-not-found {
+  min-height: 100svh;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  padding: 2rem;
+  color: #fffaf0;
+  background: #17130f;
+  text-align: center;
+}
+
+.route-loader__mark {
+  width: 3.5rem;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  margin-bottom: 1rem;
+  border-radius: 50%;
+  color: #17130f;
+  background: #f5c229;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+  animation: route-loader-pulse 1s ease-in-out infinite alternate;
+}
+
+.route-not-found h1 {
+  max-width: 12ch;
+  margin: 0.5rem auto 1rem;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(3rem, 8vw, 7rem);
+  line-height: 0.88;
+  text-transform: uppercase;
+}
+
+.route-not-found > p:not(.route-not-found__eyebrow) {
+  max-width: 38rem;
+  color: #cfc6b7;
+  line-height: 1.7;
+}
+
+.route-not-found__eyebrow {
+  color: #f5c229;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.route-not-found__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.route-not-found button {
+  min-height: 3.25rem;
+  padding: 0.75rem 1.25rem;
+  border: 1px solid #f5c229;
+  border-radius: 999px;
+  color: #17130f;
+  background: #f5c229;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.route-not-found button.is-ghost {
+  color: #fffaf0;
+  background: transparent;
+}
+
+@keyframes route-loader-pulse {
+  to { transform: scale(1.08) rotate(4deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-loader__mark { animation: none; }
+}
