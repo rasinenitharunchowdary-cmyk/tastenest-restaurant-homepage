@@ -8,11 +8,13 @@ import '@fontsource/barlow-condensed/latin-600.css'
 import '@fontsource/barlow-condensed/latin-700.css'
 import '@fontsource/barlow-condensed/latin-800.css'
 import 'lenis/dist/lenis.css'
-import HomeFour from './HomeFour.jsx'
+import AppRouter from './AppRouter.jsx'
+import './styles.css'
 import './home-four.css'
+import './collection-nav.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <HomeFour />
+    <AppRouter />
   </StrictMode>,
 )

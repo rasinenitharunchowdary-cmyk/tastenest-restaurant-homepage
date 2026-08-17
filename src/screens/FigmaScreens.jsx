@@ -12,6 +12,7 @@ import {
   Clock3,
   Coffee,
   Heart,
+  LockKeyhole,
   MapPin,
   Menu,
   Minus,
@@ -26,8 +27,6 @@ import {
 } from 'lucide-react'
 import {
   products,
-  purchaseFilters,
-  purchaseGroups,
   screenDefinitions,
   screenOrder,
 } from './screenData'
@@ -68,8 +67,8 @@ function ScreenBrand({ config, onNavigate }) {
     <ScreenLink className="fs-brand" href="/designs" onNavigate={onNavigate} aria-label="Open design collection">
       <span className="fs-brand__mark"><UtensilsCrossed size={18} strokeWidth={2.5} /></span>
       <span className="fs-brand__type">
-        <strong>{config.layout === 'coffee-house' ? 'Daily Roast' : 'Foodking'}</strong>
-        <small>{config.frame}</small>
+        <strong>{config.layout === 'coffee-house' ? 'TasteNest Coffee' : 'TasteNest'}</strong>
+        <small>{config.layout === 'coffee-house' ? 'Coffee House' : 'Restaurant'}</small>
       </span>
     </ScreenLink>
   )
@@ -667,147 +666,79 @@ export function FigmaHomeScreen({ screenKey, onNavigate }) {
 }
 
 export function PurchaseScreen({ onNavigate }) {
-  const [filter, setFilter] = useState('All')
-  const [saved, setSaved] = useState(() => new Set())
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const visibleScreens = screenOrder.filter((key) => filter === 'All' || purchaseGroups[key] === filter)
   const purchaseTheme = {
-    accent: '#ff4c40',
-    accent2: '#c5ff47',
-    surface: '#f2efe8',
-    ink: '#151515',
-    hero: '#171717',
+    accent: '#f5d773',
+    accent2: '#eb8dbc',
+    surface: '#07133d',
+    ink: '#ffffff',
+    hero: '#07133d',
     heroText: '#ffffff',
-    card: '#ffffff',
+    card: '#112354',
   }
 
   return (
-    <div className="figma-screen figma-screen--purchase" data-layout="purchase" style={themeStyle(purchaseTheme)}>
-      <a className="fs-skip-link" href="#fs-purchase-main">Skip to design collection</a>
-      <header className="fs-purchase-header">
-        <ScreenLink className="fs-purchase-mark" href="/designs" onNavigate={onNavigate}>
-          <span>FM</span><strong>Restaurant<br />Screen Library</strong>
-        </ScreenLink>
-        <nav aria-label="Design catalog navigation">
-          <a href="#fs-purchase-grid">Home screens</a>
-          <a href="#fs-purchase-license">About this build</a>
-        </nav>
-        <button
-          className="fs-icon-button fs-menu-button"
-          type="button"
-          aria-label="Toggle catalog navigation"
-          aria-expanded={mobileOpen}
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
-          {mobileOpen ? <X /> : <Menu />}
-        </button>
-      </header>
+    <div className="figma-screen figma-screen--premium" data-layout="purchase" style={themeStyle(purchaseTheme)}>
+      <a className="fs-skip-link" href="#premium-screen-gallery">Skip to screen previews</a>
+      <main className="fp-premium">
+        <header className="fp-premium__mast">
+          <span className="fp-premium__wordmark">figma<span>market</span></span>
+          <span>Restaurant Website Template</span>
+        </header>
 
-      {mobileOpen && (
-        <nav className="fs-purchase-mobile" aria-label="Mobile catalog navigation">
-          <a href="#fs-purchase-grid" onClick={() => setMobileOpen(false)}>Home screens</a>
-          <a href="#fs-purchase-license" onClick={() => setMobileOpen(false)}>About this build</a>
-        </nav>
-      )}
-
-      <main id="fs-purchase-main">
-        <section className="fs-purchase-hero">
-          <div className="fs-shell">
-            <span className="fs-kicker"><Sparkles />Restaurant UI collection</span>
-            <h1>Choose your<br /><em>perfect table.</em></h1>
-            <p>Eleven responsive, interaction-ready restaurant directions built from one reusable React system. Home‑5 remains the original motion-rich implementation.</p>
-            <a className="fs-button fs-button--solid" href="#fs-purchase-grid">Browse the homes <ArrowRight /></a>
-            <div className="fs-purchase-hero__art" aria-hidden="true">
-              {['/assets/wings.webp', '/assets/pizza.webp', '/assets/burger-fries.webp'].map((image, index) => (
-                <img src={image} alt="" key={image} style={{ '--fs-art-index': index }} />
-              ))}
-              <span>11</span>
-              <small>distinct<br />home directions</small>
-            </div>
+        <section className="fp-premium__intro" aria-labelledby="premium-title">
+          <div>
+            <p className="fp-premium__eyebrow">TasteNest · full design collection</p>
+            <h1 id="premium-title">Enjoyed This?<br /><em>Unlock More</em> In The<br />Premium Edition!</h1>
+            <a className="fp-premium__unlock" href="#premium-screen-gallery">
+              <LockKeyhole size={16} aria-hidden="true" />
+              <span>Unlock Premium Access</span>
+              <ArrowRight size={17} aria-hidden="true" />
+            </a>
           </div>
+          <aside className="fp-premium__edition" aria-label="Template contents">
+            <strong>12</strong>
+            <span>responsive<br />screen routes</span>
+            <p>Purchase · Homes 1–10 · Coffee</p>
+          </aside>
         </section>
 
-        <section className="fs-purchase-library" id="fs-purchase-grid">
-          <div className="fs-shell">
-            <div className="fs-purchase-library__top">
-              <SectionTitle eyebrow="Screen library" title="Find the right atmosphere" copy="Filter by mood, save promising directions and open any screen as a direct route." />
-              <div className="fs-purchase-filters" role="group" aria-label="Filter home screens by mood">
-                {purchaseFilters.map((item) => (
-                  <button
-                    type="button"
-                    className={filter === item ? 'is-active' : ''}
-                    aria-pressed={filter === item}
-                    onClick={() => setFilter(item)}
-                    key={item}
-                  >
-                    {item}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="fs-purchase-grid">
-              {visibleScreens.map((key, index) => {
-                const config = screenDefinitions[key]
-                const isSaved = saved.has(key)
-                return (
-                  <article
-                    className="fs-design-card"
-                    key={key}
-                    style={{ '--fs-card-accent': config.theme.accent, '--fs-card-hero': config.theme.hero }}
-                  >
-                    <div className="fs-design-card__preview">
-                      <img src={config.heroImage} alt="" loading="lazy" decoding="async" />
-                      <span>{String(index + 1).padStart(2, '0')}</span>
-                      <button
-                        className="fs-icon-button"
-                        type="button"
-                        aria-label={`${isSaved ? 'Remove' : 'Save'} ${config.frame}`}
-                        aria-pressed={isSaved}
-                        onClick={() => setSaved((current) => {
-                          const next = new Set(current)
-                          if (next.has(key)) next.delete(key)
-                          else next.add(key)
-                          return next
-                        })}
-                      >
-                        <Heart fill={isSaved ? 'currentColor' : 'none'} />
-                      </button>
-                    </div>
-                    <div className="fs-design-card__body">
-                      <div><span>{purchaseGroups[key]}</span><h2>{config.frame}</h2></div>
-                      <p>{config.lead}</p>
-                      <div className="fs-design-card__swatches" aria-label={`${config.frame} colour palette`}>
-                        {[config.theme.hero, config.theme.accent, config.theme.accent2, config.theme.surface].map((colour, swatchIndex) => (
-                          <i key={`${colour}-${swatchIndex}`} style={{ background: colour }} />
-                        ))}
-                      </div>
-                      <ScreenLink className="fs-design-card__link" href={config.path} onNavigate={onNavigate}>
-                        Open screen <ArrowUpRight />
-                      </ScreenLink>
-                    </div>
-                  </article>
-                )
-              })}
-            </div>
+        <section className="fp-premium__gallery" id="premium-screen-gallery" aria-labelledby="premium-gallery-title">
+          <div className="fp-premium__gallery-heading">
+            <p>Premium preview</p>
+            <h2 id="premium-gallery-title">Every screen, ready to open.</h2>
           </div>
-        </section>
-
-        <section className="fs-purchase-license" id="fs-purchase-license">
-          <div className="fs-shell">
-            <SectionTitle eyebrow="Built for integration" title="One system, eleven distinct expressions." />
-            <div>
-              <article><strong>01</strong><h2>Scoped by design</h2><p>Every visual rule lives beneath the unique <code>.figma-screen</code> namespace.</p></article>
-              <article><strong>02</strong><h2>Route ready</h2><p>Direct, exact path matching returns nothing for unknown URLs.</p></article>
-              <article><strong>03</strong><h2>Locally interactive</h2><p>Filters, sliders, favourites, cart controls and overlays work without a backend.</p></article>
-            </div>
+          <div className="fp-premium__grid">
+            {screenOrder.map((key, index) => {
+              const config = screenDefinitions[key]
+              return (
+                <ScreenLink
+                  className="fp-premium-card"
+                  href={config.path}
+                  onNavigate={onNavigate}
+                  key={key}
+                  aria-label={`Open ${config.frame}`}
+                  style={{ '--fp-card-accent': config.theme.accent, '--fp-card-hero': config.theme.hero, '--fp-card-surface': config.theme.surface }}
+                >
+                  <span className="fp-premium-card__number">{String(index + 1).padStart(2, '0')}</span>
+                  <span className="fp-premium-card__window">
+                    <span className="fp-premium-card__bar"><i /><i /><i /></span>
+                    <img src={config.heroImage} alt="" loading={index < 3 ? 'eager' : 'lazy'} decoding="async" />
+                    <span className="fp-premium-card__shade" />
+                    <b>{config.title ?? config.frame}</b>
+                    <i className="fp-premium-card__accent" />
+                  </span>
+                  <span className="fp-premium-card__caption"><strong>{config.frame}</strong><small>Open screen <ArrowUpRight size={13} /></small></span>
+                </ScreenLink>
+              )
+            })}
+            <ScreenLink className="fp-premium-card fp-premium-card--full" href="/home-1" onNavigate={onNavigate}>
+              <span>FULL<br />PROJECT</span>
+              <ArrowUpRight size={30} aria-hidden="true" />
+              <small>Start exploring</small>
+            </ScreenLink>
           </div>
         </section>
       </main>
-
-      <footer className="fs-purchase-footer">
-        <div className="fs-shell"><span>Figma-inspired restaurant collection</span><span>React / responsive / accessible</span></div>
-      </footer>
     </div>
   )
 }

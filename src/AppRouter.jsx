@@ -1,41 +1,28 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import { ChevronDown, Grid2X2, X } from 'lucide-react'
 
+const HomeFour = lazy(() => import('./HomeFour.jsx'))
 const HomeFive = lazy(() => import('./App.jsx'))
 const FigmaScreenRouter = lazy(() =>
   import('./screens/index.js').then((module) => ({ default: module.FigmaScreenRouter })),
 )
 
-const collectionPaths = new Set([
-  '/designs',
-  '/purchase',
-  '/home-1',
-  '/home-2',
-  '/home-3',
-  '/home-4',
-  '/home-6',
-  '/home-7',
-  '/home-8',
-  '/home-9',
-  '/home-10',
-  '/home-coffee',
-])
+const routeEntries = [
+  { path: '/purchase', label: 'Purchase', caption: 'Premium previews' },
+  { path: '/home-1', label: 'Home 1', caption: 'Dark table' },
+  { path: '/home-2', label: 'Home 2', caption: 'Airy collage' },
+  { path: '/home-3', label: 'Home 3', caption: 'King burger' },
+  { path: '/home-4', label: 'Home 4', caption: 'Red burger' },
+  { path: '/home-5', label: 'Home 5', caption: 'TasteNest original' },
+  { path: '/home-6', label: 'Home 6', caption: 'Pizza red' },
+  { path: '/home-7', label: 'Home 7', caption: 'Pink chicken' },
+  { path: '/home-8', label: 'Home 8', caption: 'White burger' },
+  { path: '/home-9', label: 'Home 9', caption: 'Aqua feast' },
+  { path: '/home-10', label: 'Home 10', caption: 'Dark teal' },
+  { path: '/home-coffee', label: 'Home Coffee', caption: 'Coffee house' },
+]
 
-const screenNames = {
-  '/': 'Home 5',
-  '/home-5': 'Home 5',
-  '/designs': 'Homepage Collection',
-  '/purchase': 'Homepage Collection',
-  '/home-1': 'Home 1',
-  '/home-2': 'Home 2',
-  '/home-3': 'Home 3',
-  '/home-4': 'Home 4',
-  '/home-6': 'Home 6',
-  '/home-7': 'Home 7',
-  '/home-8': 'Home 8',
-  '/home-9': 'Home 9',
-  '/home-10': 'Home 10',
-  '/home-coffee': 'Home Coffee',
-}
+const routeNames = Object.fromEntries(routeEntries.map(({ path, label }) => [path, label]))
 
 function normalizePath(pathname) {
   if (!pathname || pathname === '/') return '/'
@@ -44,24 +31,73 @@ function normalizePath(pathname) {
 
 function LoadingScreen() {
   return (
-    <div className="route-loader" role="status" aria-live="polite">
-      <span className="route-loader__mark" aria-hidden="true">T</span>
-      <p>Preparing your table…</p>
+    <div className="collection-loader" role="status" aria-live="polite">
+      <span aria-hidden="true">TN</span>
+      <p>Loading screen…</p>
     </div>
   )
 }
 
 function NotFound({ onNavigate }) {
   return (
-    <main className="route-not-found">
-      <p className="route-not-found__eyebrow">404 · Table not found</p>
-      <h1>This page is not on tonight’s menu.</h1>
-      <p>Explore every homepage from the original Figma collection or return to the featured design.</p>
-      <div className="route-not-found__actions">
-        <button type="button" onClick={() => onNavigate('/designs')}>View all designs</button>
-        <button type="button" className="is-ghost" onClick={() => onNavigate('/')}>Go home</button>
-      </div>
+    <main className="collection-not-found">
+      <p>404 · SCREEN NOT FOUND</p>
+      <h1>That template is not on the board.</h1>
+      <button type="button" onClick={() => onNavigate('/designs')}>Open all screens</button>
     </main>
+  )
+}
+
+function ScreenNavigator({ pathname, onNavigate }) {
+  const [open, setOpen] = useState(false)
+  const currentPath = pathname === '/' || pathname === '/designs' ? '/purchase' : pathname
+  const current = routeEntries.find((entry) => entry.path === currentPath) ?? routeEntries[0]
+
+  useEffect(() => {
+    if (!open) return undefined
+    const close = (event) => event.key === 'Escape' && setOpen(false)
+    window.addEventListener('keydown', close)
+    return () => window.removeEventListener('keydown', close)
+  }, [open])
+
+  return (
+    <div className={`collection-switcher ${open ? 'is-open' : ''}`}>
+      <button
+        className="collection-switcher__toggle"
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-controls="screen-switcher-menu"
+        onClick={() => setOpen((value) => !value)}
+      >
+        <Grid2X2 size={16} />
+        <span><small>Figma screens</small>{current.label}</span>
+        <ChevronDown size={16} />
+      </button>
+      {open && (
+        <div className="collection-switcher__panel" id="screen-switcher-menu" role="dialog" aria-label="Open a Figma screen">
+          <div className="collection-switcher__head"><span>Restaurant UI collection</span><button type="button" onClick={() => setOpen(false)} aria-label="Close screen menu"><X size={16} /></button></div>
+          <div className="collection-switcher__list">
+            {routeEntries.map((entry, index) => (
+              <button
+                type="button"
+                className={entry.path === currentPath ? 'is-current' : ''}
+                key={entry.path}
+                onClick={() => {
+                  setOpen(false)
+                  onNavigate(entry.path)
+                }}
+              >
+                <span>{String(index).padStart(2, '0')}</span>
+                <strong>{entry.label}</strong>
+                <small>{entry.caption}</small>
+              </button>
+            ))}
+          </div>
+          <p>Every item opens as its own route.</p>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -70,12 +106,9 @@ export default function AppRouter() {
 
   const navigate = useCallback((nextPath) => {
     const url = new URL(nextPath, window.location.origin)
-    const normalized = normalizePath(url.pathname)
-    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
-    const next = `${normalized}${url.search}${url.hash}`
-
-    if (current !== next) window.history.pushState({}, '', next)
-    setPathname(normalized)
+    const next = normalizePath(url.pathname)
+    if (next !== normalizePath(window.location.pathname)) window.history.pushState({}, '', next)
+    setPathname(next)
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
 
@@ -85,24 +118,16 @@ export default function AppRouter() {
     return () => window.removeEventListener('popstate', onPopState)
   }, [])
 
-  const screenName = screenNames[pathname]
+  const canonicalPath = pathname === '/' || pathname === '/designs' ? '/purchase' : pathname
+  const pageName = routeNames[canonicalPath]
   const metadata = useMemo(() => {
-    if (!screenName) {
-      return {
-        title: 'Page not found | TasteNest',
-        description: 'The requested TasteNest page could not be found.',
-      }
-    }
-    return {
-      title: `${screenName} | TasteNest Restaurant Collection`,
-      description: `${screenName} from the responsive TasteNest restaurant homepage collection.`,
-    }
-  }, [screenName])
+    if (!pageName) return { title: 'Screen not found | TasteNest', description: 'The requested TasteNest screen could not be found.' }
+    return { title: `${pageName} | TasteNest Restaurant Collection`, description: `${pageName} from the complete TasteNest Figma collection.` }
+  }, [pageName])
 
   useEffect(() => {
     document.title = metadata.title
-    const description = document.querySelector('meta[name="description"]')
-    description?.setAttribute('content', metadata.description)
+    document.querySelector('meta[name="description"]')?.setAttribute('content', metadata.description)
   }, [metadata])
 
   useEffect(() => {
@@ -111,24 +136,25 @@ export default function AppRouter() {
       if (!anchor || event.defaultPrevented || event.button !== 0) return
       if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
       const href = anchor.getAttribute('href')
-      if (!href || !href.startsWith('/')) return
+      if (!href?.startsWith('/')) return
       event.preventDefault()
       navigate(href)
     }
-
     document.addEventListener('click', onDocumentClick)
     return () => document.removeEventListener('click', onDocumentClick)
   }, [navigate])
 
   let screen = <NotFound onNavigate={navigate} />
-  if (pathname === '/' || pathname === '/home-5') screen = <HomeFive />
-  if (collectionPaths.has(pathname)) {
-    screen = <FigmaScreenRouter pathname={pathname} onNavigate={navigate} />
+  if (canonicalPath === '/home-4') screen = <HomeFour />
+  else if (canonicalPath === '/home-5') screen = <HomeFive />
+  else if (routeEntries.some((entry) => entry.path === canonicalPath && entry.path !== '/home-4' && entry.path !== '/home-5')) {
+    screen = <FigmaScreenRouter pathname={canonicalPath} onNavigate={navigate} />
   }
 
   return (
     <Suspense fallback={<LoadingScreen />}>
       {screen}
+      {pageName && <ScreenNavigator pathname={pathname} onNavigate={navigate} />}
     </Suspense>
   )
 }
