@@ -13,7 +13,6 @@ import {
   ChevronRight,
   Heart,
   Menu,
-  Minus,
   Phone,
   Play,
   Plus,
@@ -34,6 +33,8 @@ import {
   testimonials,
   trendingItems,
 } from './data'
+import { useCart } from './commerce/index.js'
+import { HomeDropdown } from './commerce/CommercePages.jsx'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -132,7 +133,25 @@ function DeliveryIllustration() {
   )
 }
 
-function App() {
+const commerceAliases = {
+  'Chef’s collection': 'h4-fast-food-combo',
+  'Delicious & Hot Pizza': 'h4-chicago-deep-pizza',
+  'French Fry': 'h4-fast-food-combo',
+  'Chicken & French Fry': 'h4-fast-food-combo',
+  'Express delivery': 'h4-fast-food-combo',
+  'Chef’s table': 'main-menu-smoky-beef-burger',
+  'Chicago Deep Pizza': 'main-menu-chicago-deep-pizza',
+  'Chicago Burger King': 'h4-whopper-burger',
+  'Chicago Chicken Wings': 'chicken-crunch',
+  'Chicago French Fries': 'h4-fast-food-combo',
+  'Chicago Deep Pasta': 'h4-chinese-pasta',
+  'Chicago Beef Jerky': 'smoky-beef-burger',
+  'Chicago Salad Recipes': 'main-menu-garden-street-tacos',
+}
+
+const homeFiveProductId = (item) => `main-menu-${item.name}`
+
+function App({ onNavigate, onOpenCart }) {
   const pageRef = useRef(null)
   const heroVantaRef = useRef(null)
   const galleryRef = useRef(null)
@@ -141,14 +160,13 @@ function App() {
   const toastTimerRef = useRef(null)
   const [loaded, setLoaded] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [cartOpen, setCartOpen] = useState(false)
-  const [cartCount, setCartCount] = useState(0)
   const [menuFilter, setMenuFilter] = useState('Chicken Fry')
   const [testimonial, setTestimonial] = useState(0)
   const [activeProcess, setActiveProcess] = useState(1)
   const [videoOpen, setVideoOpen] = useState(false)
   const [toast, setToast] = useState('')
   const [scrolled, setScrolled] = useState(false)
+  const { itemCount, addItem } = useCart()
 
   const visibleMenu = useMemo(
     () => menuItems.filter((item) => item.category === menuFilter),
@@ -161,9 +179,13 @@ function App() {
     toastTimerRef.current = window.setTimeout(() => setToast(''), 2600)
   }
 
-  const addToOrder = (name = 'Your selection') => {
-    setCartCount((count) => count + 1)
-    showToast(`${name} added to your order`)
+  const addToOrder = (reference = 'h4-fast-food-combo', label = typeof reference === 'string' ? reference : reference.name) => {
+    const productId = typeof reference === 'string' ? commerceAliases[reference] ?? reference : reference
+    if (!addItem(productId)) {
+      showToast('That dish is unavailable right now')
+      return
+    }
+    showToast(`${label} added to your order`)
   }
 
   useEffect(() => {
@@ -284,7 +306,6 @@ function App() {
     const onKey = (event) => {
       if (event.key === 'Escape') {
         setMenuOpen(false)
-        setCartOpen(false)
         setVideoOpen(false)
       }
     }
@@ -400,15 +421,19 @@ function App() {
         <div className="header__inner container">
           <Logo />
           <nav className="desktop-nav" aria-label="Primary navigation">
-            {navLinks.map(([label, id]) => <a href={`#${id}`} key={id}>{label}</a>)}
+            {navLinks.map(([label, id]) => {
+              if (label === 'Home') return <HomeDropdown key={id} className="tn-home-menu--home-five" onNavigate={onNavigate} />
+              if (label === 'Menu') return <a href="/menu" key={id} onClick={(event) => { event.preventDefault(); onNavigate?.('/menu') }}>Explore food</a>
+              return <a href={`#${id}`} key={id}>{label}</a>
+            })}
           </nav>
           <div className="header__actions">
-            <button className="icon-button header__search" aria-label="Search" onClick={() => showToast('Search is ready for your craving')}>
+            <button className="icon-button header__search" aria-label="Explore food" onClick={() => onNavigate?.('/menu')}>
               <Search size={18} />
             </button>
-            <button className="cart-button" aria-label={`Open order, ${cartCount} items`} onClick={() => setCartOpen(true)}>
+            <button className="cart-button" aria-label={`Open order, ${itemCount} items`} onClick={onOpenCart}>
               <ShoppingBag size={18} />
-              <span>{cartCount}</span>
+              <span>{itemCount}</span>
             </button>
             <a className="header__contact magnetic" href="#contact">Contact Us <ArrowUpRight size={15} /></a>
             <button className="menu-button" aria-label="Open menu" onClick={() => setMenuOpen(true)}><Menu /></button>
@@ -420,35 +445,34 @@ function App() {
         <button className="mobile-menu__close" aria-label="Close menu" onClick={() => setMenuOpen(false)}><X /></button>
         <Logo light />
         <nav aria-label="Mobile navigation">
-          {navLinks.map(([label, id], index) => (
-            <a href={`#${id}`} key={id} onClick={() => setMenuOpen(false)}>
-              <span>0{index + 1}</span>{label}<ArrowRight size={20} />
+          <HomeDropdown
+            className="tn-home-menu--home-five-mobile"
+            label="Choose Home"
+            onNavigate={(target) => {
+              setMenuOpen(false)
+              onNavigate?.(target)
+            }}
+          />
+          {navLinks.filter(([label]) => label !== 'Home').map(([label, id], index) => (
+            <a
+              href={label === 'Menu' ? '/menu' : `#${id}`}
+              key={id}
+              onClick={(event) => {
+                setMenuOpen(false)
+                if (label === 'Menu') {
+                  event.preventDefault()
+                  onNavigate?.('/menu')
+                }
+              }}
+            >
+              <span>0{index + 2}</span>{label}<ArrowRight size={20} />
             </a>
           ))}
         </nav>
         <div className="mobile-menu__meta"><Phone size={17} /> +1 718 904 4450</div>
       </aside>
 
-      <aside className={`cart-drawer ${cartOpen ? 'cart-drawer--open' : ''}`} aria-hidden={!cartOpen}>
-        <div className="cart-drawer__header">
-          <span>Your order</span>
-          <button aria-label="Close order" onClick={() => setCartOpen(false)}><X /></button>
-        </div>
-        <div className="cart-drawer__body">
-          <div className="cart-drawer__icon"><ShoppingBag /></div>
-          <h3>{cartCount ? `${cartCount} tasty pick${cartCount > 1 ? 's' : ''}` : 'Your bag is hungry'}</h3>
-          <p>{cartCount ? 'Your made-fresh favourites are ready for the kitchen.' : 'Add something delicious from the menu.'}</p>
-          {cartCount > 0 && (
-            <div className="cart-drawer__quantity">
-              <button aria-label="Remove one item" onClick={() => setCartCount((count) => Math.max(0, count - 1))}><Minus /></button>
-              <strong>{cartCount}</strong>
-              <button aria-label="Add one item" onClick={() => setCartCount((count) => count + 1)}><Plus /></button>
-            </div>
-          )}
-        </div>
-        <ActionButton className="button--full" onClick={() => showToast('Checkout demo complete')}>Checkout</ActionButton>
-      </aside>
-      {(menuOpen || cartOpen) && <button className="screen-overlay" aria-label="Close overlay" onClick={() => { setMenuOpen(false); setCartOpen(false) }} />}
+      {menuOpen && <button className="screen-overlay" aria-label="Close menu" onClick={() => setMenuOpen(false)} />}
 
       <main id="main">
         <section className="hero" id="home">
@@ -467,7 +491,7 @@ function App() {
               <p className="hero__copy">Exclusive offer — <strong>35% off</strong> this week. Big flavour, crisp edges and proper comfort food.</p>
               <div className="hero__actions">
                 <ActionButton onClick={() => addToOrder('Chef’s collection')}>Order Now</ActionButton>
-                <a className="hero__ghost-link" href="#menu"><span>Explore menu</span><ArrowRight size={18} /></a>
+                <a className="hero__ghost-link" href="/menu" onClick={(event) => { event.preventDefault(); onNavigate?.('/menu') }}><span>Explore menu</span><ArrowRight size={18} /></a>
               </div>
               <form className="hero__subscribe" onSubmit={submitSubscribe}>
                 <input type="email" placeholder="Your email address" aria-label="Email address" required />
@@ -548,19 +572,23 @@ function App() {
               ))}
             </div>
             <div className="menu-grid" key={menuFilter}>
-              {visibleMenu.map((item) => (
-                <article className="menu-card" key={item.name} data-reveal>
-                  <button className="menu-card__heart" aria-label={`Save ${item.name}`} onClick={() => showToast(`${item.name} saved to favourites`)}><Heart size={17} /></button>
-                  <div className="menu-card__image"><img src={item.image} alt={item.name} loading="lazy" decoding="async" /></div>
-                  <span className="menu-card__category">{item.category}</span>
-                  <h3>{item.name}</h3>
-                  <p>Freshly prepared, perfectly seasoned and served hot.</p>
-                  <div className="menu-card__footer">
-                    <strong>${item.price}.00</strong>
-                    <button aria-label={`Add ${item.name} to order`} onClick={() => addToOrder(item.name)}><Plus size={18} /></button>
-                  </div>
-                </article>
-              ))}
+              {visibleMenu.map((item) => {
+                const productId = homeFiveProductId(item)
+                const productPath = `/product/${encodeURIComponent(productId)}`
+                return (
+                  <article className="menu-card" key={item.name} data-reveal>
+                    <button className="menu-card__heart" aria-label={`Save ${item.name}`} onClick={() => showToast(`${item.name} saved to favourites`)}><Heart size={17} /></button>
+                    <div className="menu-card__image"><button className="menu-card__detail" type="button" aria-label={`View ${item.name} details`} onClick={() => onNavigate?.(productPath)}><img src={item.image} alt={item.name} loading="lazy" decoding="async" /></button></div>
+                    <span className="menu-card__category">{item.category}</span>
+                    <h3><button className="menu-card__title" type="button" onClick={() => onNavigate?.(productPath)}>{item.name}</button></h3>
+                    <p>Freshly prepared, perfectly seasoned and served hot.</p>
+                    <div className="menu-card__footer">
+                      <strong>${item.price}.00</strong>
+                      <button aria-label={`Add ${item.name} to order`} onClick={() => addToOrder(productId, item.name)}><Plus size={18} /></button>
+                    </div>
+                  </article>
+                )
+              })}
             </div>
           </div>
         </section>

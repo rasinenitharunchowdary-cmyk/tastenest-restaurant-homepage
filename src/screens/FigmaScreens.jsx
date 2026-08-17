@@ -15,7 +15,6 @@ import {
   LockKeyhole,
   MapPin,
   Menu,
-  Minus,
   Play,
   Plus,
   Search,
@@ -30,6 +29,8 @@ import {
   screenDefinitions,
   screenOrder,
 } from './screenData'
+import { useCart } from '../commerce/index.js'
+import { HomeDropdown } from '../commerce/CommercePages.jsx'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -84,11 +85,13 @@ function SectionTitle({ eyebrow, title, copy, align = 'left' }) {
   )
 }
 
-function ProductCard({ product, favourite, onFavourite, onAdd }) {
+function ProductCard({ product, favourite, onFavourite, onAdd, onNavigate }) {
   return (
     <article className="fs-product-card">
       <div className="fs-product-card__media">
-        <img src={product.image} alt={product.name} loading="lazy" decoding="async" />
+        <ScreenLink className="fs-product-card__detail-link" href={`/product/${product.id}`} onNavigate={onNavigate} aria-label={`View ${product.name}`}>
+          <img src={product.image} alt={product.name} loading="lazy" decoding="async" />
+        </ScreenLink>
         <span className="fs-product-card__badge">{product.badge}</span>
         <button
           className="fs-icon-button fs-product-card__heart"
@@ -103,7 +106,7 @@ function ProductCard({ product, favourite, onFavourite, onAdd }) {
       <div className="fs-product-card__body">
         <span className="fs-product-card__category">{product.category}</span>
         <div className="fs-product-card__title-row">
-          <h3>{product.name}</h3>
+          <h3><ScreenLink href={`/product/${product.id}`} onNavigate={onNavigate}>{product.name}</ScreenLink></h3>
           <span><Star size={13} fill="currentColor" />{product.rating}</span>
         </div>
         <p>{product.description}</p>
@@ -142,9 +145,8 @@ function HeroArtwork({ slide, layout, onPlay }) {
   )
 }
 
-function ScreenHeader({ config, onNavigate, count, query, onQuery, mobileOpen, setMobileOpen, cartOpen, setCartOpen }) {
+function ScreenHeader({ config, onNavigate, count, query, onQuery, mobileOpen, setMobileOpen, onOpenCart }) {
   const menuId = `fs-mobile-menu-${config.key}`
-  const menuAnchor = `#fs-menu-${config.key}`
   const storyAnchor = `#fs-story-${config.key}`
   const visitAnchor = `#fs-visit-${config.key}`
 
@@ -158,8 +160,8 @@ function ScreenHeader({ config, onNavigate, count, query, onQuery, mobileOpen, s
       <header className="fs-header">
         <ScreenBrand config={config} onNavigate={onNavigate} />
         <nav className="fs-header__nav" aria-label={`${config.frame} primary navigation`}>
-          <a href="#fs-top">Home</a>
-          <a href={menuAnchor}>Menu</a>
+          <HomeDropdown className="fs-home-menu" onNavigate={onNavigate} />
+          <ScreenLink href="/menu" onNavigate={onNavigate}>Menu</ScreenLink>
           <a href={storyAnchor}>Our story</a>
           <a href={visitAnchor}>Visit</a>
         </nav>
@@ -173,8 +175,7 @@ function ScreenHeader({ config, onNavigate, count, query, onQuery, mobileOpen, s
             className="fs-icon-button fs-cart-button"
             type="button"
             aria-label={`Open bag with ${count} item${count === 1 ? '' : 's'}`}
-            aria-expanded={cartOpen}
-            onClick={() => setCartOpen(!cartOpen)}
+            onClick={onOpenCart}
           >
             <ShoppingBag size={18} />
             <span>{count}</span>
@@ -198,15 +199,22 @@ function ScreenHeader({ config, onNavigate, count, query, onQuery, mobileOpen, s
             <button className="fs-icon-button" type="button" aria-label="Close navigation" onClick={() => setMobileOpen(false)}><X /></button>
           </div>
           <nav>
+            <HomeDropdown
+              className="fs-mobile-home-menu"
+              label="Choose Home"
+              onNavigate={(target) => {
+                setMobileOpen(false)
+                onNavigate?.(target)
+              }}
+            />
             {[
-              ['Home', '#fs-top'],
-              ['Menu', menuAnchor],
+              ['Explore food', '/menu'],
               ['Our story', storyAnchor],
               ['Visit', visitAnchor],
             ].map(([label, href], index) => (
-              <a href={href} key={label} onClick={() => setMobileOpen(false)}>
-                <span>0{index + 1}</span>{label}<ArrowRight />
-              </a>
+              <ScreenLink href={href} key={label} onNavigate={onNavigate} onClick={() => setMobileOpen(false)}>
+                <span>0{index + 2}</span>{label}<ArrowRight />
+              </ScreenLink>
             ))}
             <ScreenLink href="/designs" onNavigate={onNavigate} onClick={() => setMobileOpen(false)}>
               <span>05</span>All designs<ArrowRight />
@@ -218,7 +226,7 @@ function ScreenHeader({ config, onNavigate, count, query, onQuery, mobileOpen, s
   )
 }
 
-export function FigmaHomeScreen({ screenKey, onNavigate }) {
+export function FigmaHomeScreen({ screenKey, onNavigate, onOpenCart }) {
   const requestedConfig = screenDefinitions[screenKey]
   const canRender = Boolean(requestedConfig?.alternate && requestedConfig?.story && requestedConfig?.featured)
   const config = canRender ? requestedConfig : screenDefinitions['home-1']
@@ -226,8 +234,6 @@ export function FigmaHomeScreen({ screenKey, onNavigate }) {
   const [category, setCategory] = useState('All')
   const [query, setQuery] = useState('')
   const [favourites, setFavourites] = useState(() => new Set())
-  const [cartCount, setCartCount] = useState(0)
-  const [cartOpen, setCartOpen] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [storyOpen, setStoryOpen] = useState(false)
   const [testimonial, setTestimonial] = useState(0)
@@ -235,6 +241,7 @@ export function FigmaHomeScreen({ screenKey, onNavigate }) {
   const [toast, setToast] = useState('')
   const toastTimer = useRef(null)
   const screenRef = useRef(null)
+  const { itemCount, addItem } = useCart()
 
   const featuredProducts = useMemo(
     () => config.featured.map((id) => productById.get(id)).filter(Boolean),
@@ -276,10 +283,9 @@ export function FigmaHomeScreen({ screenKey, onNavigate }) {
 
   useEffect(() => {
     const onKeyDown = (event) => {
-      if (event.key !== 'Escape') return
-      setMobileOpen(false)
-      setCartOpen(false)
-      setStoryOpen(false)
+    if (event.key !== 'Escape') return
+    setMobileOpen(false)
+    setStoryOpen(false)
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
@@ -389,8 +395,13 @@ export function FigmaHomeScreen({ screenKey, onNavigate }) {
   }
 
   const addProduct = (product) => {
-    setCartCount((current) => current + 1)
-    showToast(`${product.name} added to your bag`)
+    if (addItem(product)) showToast(`${product.name} added to your bag`)
+  }
+
+  const addTableBundle = () => {
+    const bundle = featuredProducts.slice(0, 3)
+    bundle.forEach((product) => addItem(product))
+    showToast(`${bundle.length} featured dishes added to your bag`)
   }
 
   const submitNewsletter = (event) => {
@@ -417,44 +428,21 @@ export function FigmaHomeScreen({ screenKey, onNavigate }) {
       <ScreenHeader
         config={config}
         onNavigate={onNavigate}
-        count={cartCount}
+        count={itemCount}
         query={query}
         onQuery={setQuery}
         mobileOpen={mobileOpen}
         setMobileOpen={setMobileOpen}
-        cartOpen={cartOpen}
-        setCartOpen={setCartOpen}
+        onOpenCart={onOpenCart}
       />
 
-      {(mobileOpen || cartOpen) && (
+      {mobileOpen && (
         <button
           className="fs-screen-overlay"
           type="button"
           aria-label="Close open panel"
-          onClick={() => { setMobileOpen(false); setCartOpen(false) }}
+          onClick={() => setMobileOpen(false)}
         />
-      )}
-
-      {cartOpen && (
-        <aside className="fs-cart-panel" role="dialog" aria-modal="true" aria-label="Your bag">
-          <div className="fs-cart-panel__header">
-            <strong>Your bag</strong>
-            <button className="fs-icon-button" type="button" aria-label="Close bag" onClick={() => setCartOpen(false)}><X /></button>
-          </div>
-          <ShoppingBag className="fs-cart-panel__bag" />
-          <h2>{cartCount ? `${cartCount} delicious pick${cartCount === 1 ? '' : 's'}` : 'Your bag is waiting'}</h2>
-          <p>{cartCount ? 'Your local demo order is ready to review.' : 'Add a featured item to get started.'}</p>
-          {cartCount > 0 && (
-            <div className="fs-quantity" aria-label="Bag quantity">
-              <button type="button" aria-label="Remove one item" onClick={() => setCartCount((count) => Math.max(0, count - 1))}><Minus /></button>
-              <strong>{cartCount}</strong>
-              <button type="button" aria-label="Add one item" onClick={() => setCartCount((count) => count + 1)}><Plus /></button>
-            </div>
-          )}
-          <button className="fs-button fs-button--solid" type="button" disabled={!cartCount} onClick={() => showToast('Demo checkout is ready')}>
-            Review order <ArrowUpRight />
-          </button>
-        </aside>
       )}
 
       <main id={`fs-main-${config.key}`}>
@@ -467,7 +455,7 @@ export function FigmaHomeScreen({ screenKey, onNavigate }) {
               <p>{slide.lead}</p>
               <div className="fs-hero__price"><span>From</span><strong>{slide.price}</strong></div>
               <div className="fs-hero__actions">
-                <a className="fs-button fs-button--solid" href={`#fs-menu-${config.key}`}>{config.primary}<ArrowUpRight /></a>
+                <ScreenLink className="fs-button fs-button--solid" href="/menu" onNavigate={onNavigate}>{config.primary}<ArrowUpRight /></ScreenLink>
                 <a className="fs-button fs-button--ghost" href={`#fs-story-${config.key}`}>{config.secondary}<ArrowRight /></a>
               </div>
             </div>
@@ -530,6 +518,7 @@ export function FigmaHomeScreen({ screenKey, onNavigate }) {
                     favourite={favourites.has(product.id)}
                     onFavourite={toggleFavourite}
                     onAdd={addProduct}
+                    onNavigate={onNavigate}
                     key={product.id}
                   />
                 ))}
@@ -580,7 +569,7 @@ export function FigmaHomeScreen({ screenKey, onNavigate }) {
               <span>Local offer / this week</span>
               <h2>Bring the table. We’ll bring the flavour.</h2>
               <p>Order any three featured plates and the fourth one is on us. Available for this local concept demo.</p>
-              <button className="fs-button fs-button--light" type="button" onClick={() => { setCartCount((count) => count + 3); showToast('Table bundle added to your bag') }}>
+              <button className="fs-button fs-button--light" type="button" onClick={addTableBundle}>
                 Add table bundle <Plus />
               </button>
             </div>

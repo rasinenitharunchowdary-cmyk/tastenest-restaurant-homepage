@@ -48,9 +48,10 @@ export function matchFigmaScreen(pathname) {
 export function FigmaScreenRouter({
   pathname = typeof window === 'undefined' ? '/' : window.location.pathname,
   onNavigate,
+  onOpenCart,
 }) {
   const route = matchFigmaScreen(pathname)
   if (!route) return null
   const Screen = route.Component
-  return <Screen onNavigate={onNavigate} />
+  return <Screen onNavigate={onNavigate} onOpenCart={onOpenCart} />
 }

@@ -10,11 +10,13 @@ A responsive, motion-rich React implementation of the complete restaurant Figma 
 
 - Responsive layouts for desktop, tablet, and mobile
 - Direct routes for `/purchase`, `/home-1` … `/home-10`, and `/home-coffee`, plus a persistent in-page Figma screen picker on every route
+- Home dropdown navigation on desktop and mobile, listing Home 1–10 and Home Coffee from every design family
+- A shared ordering flow across every home: `/menu` food explorer, individual `/product/:id` pages, persistent cart, quantity controls, `/checkout`, and local order confirmation receipts
 - The complete Home-4 ecommerce sequence: hero, food categories, dual promotions, sponsor rail, offer banner, product grid, combo offer, services, about, flash deals, testimonial, delivery, gallery, and footer
 - GSAP entrance reveals, hover depth, hero parallax, and a polished loader
 - Lenis smooth scrolling
 - Vanta.js + Three.js atmospheric texture in the charcoal deal section, loaded as a split bundle
-- Working mobile menu, basket drawer, hero offer selector, food category controls, wish-list controls, order feedback, and newsletter feedback
+- Working mobile menu, shared basket drawer, hero offer selector, food category controls, wish-list controls, product detail actions, checkout validation, order feedback, and newsletter feedback
 - Local Barlow Condensed and Manrope font files
 - Downloaded and compressed WebP food photography
 - Reduced-motion support and accessible labels/landmarks
@@ -34,6 +36,8 @@ npm run preview
 ```
 
 The Netlify build configuration is included in `netlify.toml`.
+
+Checkout is intentionally local-only: it validates the form and records a receipt in browser storage, but it does not charge a card or send customer data to a server.
 
 ## Design reference
 

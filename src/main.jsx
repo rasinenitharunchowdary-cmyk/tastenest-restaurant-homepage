@@ -12,6 +12,7 @@ import AppRouter from './AppRouter.jsx'
 import './styles.css'
 import './home-four.css'
 import './collection-nav.css'
+import './commerce/commerce.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

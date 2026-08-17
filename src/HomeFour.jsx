@@ -17,6 +17,8 @@ import {
   UtensilsCrossed,
   X,
 } from 'lucide-react'
+import { useCart } from './commerce/index.js'
+import { HomeDropdown } from './commerce/CommercePages.jsx'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -36,14 +38,14 @@ const categoryItems = [
 ]
 
 const products = [
-  { name: 'Delicious Burger', old: '$76.00', price: '$59.00', discount: '-20%', image: 'burger.webp', accent: 'red' },
-  { name: 'Grilled Chiken', old: '$72.00', price: '$54.00', discount: '-25%', image: 'grilled-chicken.webp', accent: 'yellow' },
-  { name: 'Ruti With Chiken', old: '$69.00', price: '$49.00', discount: '-15%', image: 'food-table.webp', accent: 'green' },
-  { name: 'Fast Food Combo', old: '$84.00', price: '$64.00', discount: '-20%', image: 'burger-fries.webp', accent: 'pink' },
-  { name: 'Chicago Deep Pizza', old: '$69.00', price: '$53.00', discount: '-23%', image: 'cheese-pizza.webp', accent: 'orange' },
-  { name: 'Chinese Pasta', old: '$49.00', price: '$39.00', discount: '-15%', image: 'pasta.webp', accent: 'green' },
-  { name: 'Whopper Burger King', old: '$82.00', price: '$62.00', discount: '-25%', image: 'burger-fries.webp', accent: 'red' },
-  { name: 'Ruti With Beef Slice', old: '$73.00', price: '$57.00', discount: '-18%', image: 'tacos.webp', accent: 'gold' },
+  { id: 'h4-delicious-burger', name: 'Delicious Burger', old: '$76.00', price: '$59.00', discount: '-20%', image: 'burger.webp', accent: 'red' },
+  { id: 'h4-grilled-chicken', name: 'Grilled Chicken', old: '$72.00', price: '$54.00', discount: '-25%', image: 'grilled-chicken.webp', accent: 'yellow' },
+  { id: 'h4-ruti-chicken', name: 'Ruti With Chicken', old: '$69.00', price: '$49.00', discount: '-15%', image: 'food-table.webp', accent: 'green' },
+  { id: 'h4-fast-food-combo', name: 'Fast Food Combo', old: '$84.00', price: '$64.00', discount: '-20%', image: 'burger-fries.webp', accent: 'pink' },
+  { id: 'h4-chicago-deep-pizza', name: 'Chicago Deep Pizza', old: '$69.00', price: '$53.00', discount: '-23%', image: 'cheese-pizza.webp', accent: 'orange' },
+  { id: 'h4-chinese-pasta', name: 'Chinese Pasta', old: '$49.00', price: '$39.00', discount: '-15%', image: 'pasta.webp', accent: 'green' },
+  { id: 'h4-whopper-burger', name: 'Whopper Burger King', old: '$82.00', price: '$62.00', discount: '-25%', image: 'burger-fries.webp', accent: 'red' },
+  { id: 'h4-ruti-beef', name: 'Ruti With Beef Slice', old: '$73.00', price: '$57.00', discount: '-18%', image: 'tacos.webp', accent: 'gold' },
 ]
 
 const sponsors = ['foodora', 'freshio', 'UBER EATS', 'FOODPANDA', 'eats', 'GLOVO']
@@ -77,7 +79,7 @@ function SectionTitle({ eyebrow = 'CRISPY, EVERY BITE TASTE', title, copy, id })
   )
 }
 
-function ProductCard({ product, onAdd, favourite, onFavourite }) {
+function ProductCard({ product, onAdd, favourite, onFavourite, onNavigate }) {
   return (
     <article className="h4-product-card" data-reveal>
       <div className={`h4-product-card__media h4-product-card__media--${product.accent}`}>
@@ -91,13 +93,13 @@ function ProductCard({ product, onAdd, favourite, onFavourite }) {
         >
           <Heart size={16} fill={favourite ? 'currentColor' : 'none'} />
         </button>
-        <img src={asset(product.image)} alt="" />
+        <button className="h4-product-card__detail" type="button" onClick={() => onNavigate?.(`/product/${product.id}`)} aria-label={`View ${product.name} details`}><img src={asset(product.image)} alt="" /></button>
       </div>
       <div className="h4-product-card__body">
         <div className="h4-stars" aria-label="5 out of 5 stars"><Star size={11} fill="currentColor" /> <Star size={11} fill="currentColor" /> <Star size={11} fill="currentColor" /> <Star size={11} fill="currentColor" /> <Star size={11} fill="currentColor" /></div>
-        <h3>{product.name}</h3>
+        <button className="h4-product-card__title" type="button" onClick={() => onNavigate?.(`/product/${product.id}`)}>{product.name}</button>
         <p><del>{product.old}</del> <strong>{product.price}</strong></p>
-        <button className="h4-product-card__add" type="button" onClick={() => onAdd(product.name)}>
+        <button className="h4-product-card__add" type="button" onClick={() => onAdd(product.id, product.name)}>
           <Plus size={17} /> <span>Add To Cart</span>
         </button>
       </div>
@@ -105,18 +107,17 @@ function ProductCard({ product, onAdd, favourite, onFavourite }) {
   )
 }
 
-export default function HomeFour() {
+export default function HomeFour({ onNavigate, onOpenCart }) {
   const rootRef = useRef(null)
   const offerCanvasRef = useRef(null)
   const toastTimeout = useRef(null)
   const [loaded, setLoaded] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [cartOpen, setCartOpen] = useState(false)
-  const [cartCount, setCartCount] = useState(0)
   const [heroIndex, setHeroIndex] = useState(0)
   const [categoryIndex, setCategoryIndex] = useState(0)
   const [favourites, setFavourites] = useState([])
   const [toast, setToast] = useState('')
+  const { itemCount, addItem } = useCart()
   const hero = heroSlides[heroIndex]
 
   const announce = (message) => {
@@ -125,9 +126,12 @@ export default function HomeFour() {
     toastTimeout.current = window.setTimeout(() => setToast(''), 2400)
   }
 
-  const addToCart = (name) => {
-    setCartCount((count) => count + 1)
-    announce(`${name} added to your basket`)
+  const addToCart = (productId, label = 'This dish') => {
+    if (!addItem(productId)) {
+      announce('This dish is unavailable right now')
+      return
+    }
+    announce(`${label} added to your basket`)
   }
 
   const moveCategory = (direction) => {
@@ -162,7 +166,6 @@ export default function HomeFour() {
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
         setMenuOpen(false)
-        setCartOpen(false)
       }
     }
     window.addEventListener('keydown', onKeyDown)
@@ -251,17 +254,17 @@ export default function HomeFour() {
         <div className="h4-shell h4-header__inner">
           <Logo />
           <nav className="h4-nav" aria-label="Primary navigation">
-            <a href="#top" className="is-current">Home <ChevronDown size={11} /></a>
+            <HomeDropdown className="h4-home-menu" onNavigate={onNavigate} />
             <a href="#about">About Us</a>
-            <a href="#menu">Shop <ChevronDown size={11} /></a>
+            <a href="/menu" onClick={(event) => { event.preventDefault(); onNavigate?.('/menu') }}>Shop <ChevronDown size={11} /></a>
             <a href="#journal">Blog <ChevronDown size={11} /></a>
             <a href="#deals">Pages <ChevronDown size={11} /></a>
             <a href="#footer">Contact</a>
           </nav>
           <div className="h4-header__actions">
-            <button className="h4-bag-button" type="button" onClick={() => setCartOpen((open) => !open)} aria-label="Open shopping basket" aria-expanded={cartOpen}>
+            <button className="h4-bag-button" type="button" onClick={onOpenCart} aria-label={`Open shopping basket with ${itemCount} items`}>
               <ShoppingBag size={19} />
-              <span>{cartCount}</span>
+              <span>{itemCount}</span>
             </button>
             <a href="#footer" className="h4-contact-button">Contact Us</a>
             <button className="h4-menu-button" type="button" aria-label="Open navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(true)}><Menu size={22} /></button>
@@ -269,18 +272,22 @@ export default function HomeFour() {
         </div>
       </header>
 
-      <aside className={`h4-cart ${cartOpen ? 'is-open' : ''}`} aria-label="Your order">
-        <button type="button" className="h4-cart__close" onClick={() => setCartOpen(false)} aria-label="Close basket"><X size={18} /></button>
-        <ShoppingBag size={25} />
-        <p>Your basket</p>
-        <strong>{cartCount} {cartCount === 1 ? 'item' : 'items'}</strong>
-        <button type="button" onClick={() => { setCartOpen(false); announce('Checkout is ready for your details') }}>Checkout <ArrowRight size={15} /></button>
-      </aside>
-
       <aside className={`h4-mobile-nav ${menuOpen ? 'is-open' : ''}`} aria-hidden={!menuOpen}>
         <div className="h4-mobile-nav__head"><Logo light /><button type="button" onClick={() => setMenuOpen(false)} aria-label="Close navigation"><X /></button></div>
         <nav>
-          {['Home', 'About Us', 'Shop', 'Blog', 'Pages', 'Contact'].map((label, index) => <a key={label} href={['#top', '#about', '#menu', '#journal', '#deals', '#footer'][index]} onClick={() => setMenuOpen(false)}>{label}<ArrowRight size={18} /></a>)}
+          <HomeDropdown
+            className="h4-mobile-home-menu"
+            label="Choose Home"
+            onNavigate={(target) => {
+              setMenuOpen(false)
+              onNavigate?.(target)
+            }}
+          />
+          <a href="#about" onClick={() => setMenuOpen(false)}>About Us<ArrowRight size={18} /></a>
+          <a href="/menu" onClick={(event) => { event.preventDefault(); setMenuOpen(false); onNavigate?.('/menu') }}>Explore Food<ArrowRight size={18} /></a>
+          <a href="#journal" onClick={() => setMenuOpen(false)}>Blog<ArrowRight size={18} /></a>
+          <a href="#deals" onClick={() => setMenuOpen(false)}>Offers<ArrowRight size={18} /></a>
+          <a href="#footer" onClick={() => setMenuOpen(false)}>Contact<ArrowRight size={18} /></a>
         </nav>
         <p>Fresh flavours. Fast delivery.<br />Every day of the week.</p>
       </aside>
@@ -293,7 +300,7 @@ export default function HomeFour() {
               <p className="h4-hero__eyebrow"><span>✦</span>{hero.label}</p>
               <h1>{hero.title.map((line) => <span key={line}>{line}</span>)}</h1>
               <div className="h4-hero__price"><span>Limited Offer</span><strong>{hero.price}</strong></div>
-              <OrderButton onClick={() => addToCart('Hot spicy chicken burger')} />
+              <OrderButton onClick={() => addToCart('h4-delicious-burger', 'Hot spicy chicken burger')} />
             </div>
             <div className="h4-hero__visual" aria-label="Today’s best deal">
               <span className="h4-hero__script">today’s best deal</span>
@@ -331,12 +338,12 @@ export default function HomeFour() {
 
         <section className="h4-promo-pair h4-shell" id="deals">
           <article className="h4-promo h4-promo--black" data-reveal>
-            <div className="h4-promo__copy"><p>CRISPY, EVERY BITE TASTE</p><h2>SUPER<br /><em>DELICIOUS</em></h2><button type="button" onClick={() => addToCart('Super delicious burger')}>Order Now <ArrowRight size={15} /></button></div>
+            <div className="h4-promo__copy"><p>CRISPY, EVERY BITE TASTE</p><h2>SUPER<br /><em>DELICIOUS</em></h2><button type="button" onClick={() => addToCart('h4-fast-food-combo', 'Super delicious burger')}>Order Now <ArrowRight size={15} /></button></div>
             <span className="h4-promo__round">50%<small>OFF</small></span>
             <img src={asset('burger-fries.webp')} alt="Gourmet burger and fries" />
           </article>
           <article className="h4-promo h4-promo--pizza" data-reveal>
-            <div className="h4-promo__copy"><p>CRISPY, EVERY BITE TASTE</p><h2>Super Delicious<br /><em>Cheese PIZZA</em></h2><button type="button" onClick={() => addToCart('Cheese pizza')}>Order Now <ArrowRight size={15} /></button></div>
+            <div className="h4-promo__copy"><p>CRISPY, EVERY BITE TASTE</p><h2>Super Delicious<br /><em>Cheese PIZZA</em></h2><button type="button" onClick={() => addToCart('h4-chicago-deep-pizza', 'Cheese pizza')}>Order Now <ArrowRight size={15} /></button></div>
             <span className="h4-promo__limited">Limited<br />Offer</span>
             <img src={asset('cheese-pizza.webp')} alt="Cheese pizza" />
           </article>
@@ -356,7 +363,7 @@ export default function HomeFour() {
               <p>Save <strong>20%</strong></p>
               <h2>Today’s <em>Astackin</em> Day</h2>
               <span>Grilled Chiken <b>$59,00</b></span>
-              <OrderButton onClick={() => addToCart('Grilled chicken')} />
+              <OrderButton onClick={() => addToCart('h4-grilled-chicken', 'Grilled chicken')} />
             </div>
             <div className="h4-spotlight__art" data-reveal><img src={asset('grilled-chicken.webp')} alt="Grilled chicken plate" /><span>HOT<br />DEAL</span></div>
           </div>
@@ -366,9 +373,9 @@ export default function HomeFour() {
           <div className="h4-shell">
             <SectionTitle title={<>Popular Fast <em>Foods</em></>} copy="A little something delicious for every kind of hunger." />
             <div className="h4-products__grid">
-              {products.map((product) => <ProductCard key={product.name} product={product} onAdd={addToCart} favourite={favourites.includes(product.name)} onFavourite={() => toggleFavourite(product.name)} />)}
+              {products.map((product) => <ProductCard key={product.name} product={product} onAdd={addToCart} onNavigate={onNavigate} favourite={favourites.includes(product.name)} onFavourite={() => toggleFavourite(product.name)} />)}
             </div>
-            <div className="h4-products__more"><button type="button" onClick={() => announce('All signature fast foods are now showing')}>View More <ArrowRight size={16} /></button></div>
+            <div className="h4-products__more"><button type="button" onClick={() => onNavigate?.('/menu')}>View More <ArrowRight size={16} /></button></div>
           </div>
         </section>
 
@@ -383,7 +390,7 @@ export default function HomeFour() {
                 <span><b>BURGER</b><small>Best Deal</small><strong>$5<i>ONLY</i></strong></span>
                 <span><b>FAST FOOD</b><small>Hot Taste</small><strong>20%<i>OFF</i></strong></span>
               </div>
-              <OrderButton onClick={() => addToCart('Trending food combo')} />
+              <OrderButton onClick={() => addToCart('h4-fast-food-combo', 'Trending food combo')} />
             </div>
             <div className="h4-combo__visual" data-reveal>
               <div className="h4-combo__brick" />
@@ -425,14 +432,14 @@ export default function HomeFour() {
         </section>
 
         <section className="h4-mini-promos h4-shell">
-          <article className="h4-mini-promo h4-mini-promo--burger" data-reveal><div><p>CRISPY, EVERY BITE TASTE</p><h2>Today Special<br /><em>Beef Burger</em></h2><OrderButton onClick={() => addToCart('Today special beef burger')} /></div><img src={asset('burger-fries.webp')} alt="Special beef burger" /></article>
-          <article className="h4-mini-promo h4-mini-promo--meal" data-reveal><div><p>CRISPY, EVERY BITE TASTE</p><h2><em>FAST</em> Foods Meal</h2><OrderButton onClick={() => addToCart('Fast foods meal')} /></div><img src={asset('food-table.webp')} alt="Fast food meal" /></article>
+          <article className="h4-mini-promo h4-mini-promo--burger" data-reveal><div><p>CRISPY, EVERY BITE TASTE</p><h2>Today Special<br /><em>Beef Burger</em></h2><OrderButton onClick={() => addToCart('h4-whopper-burger', 'Today special beef burger')} /></div><img src={asset('burger-fries.webp')} alt="Special beef burger" /></article>
+          <article className="h4-mini-promo h4-mini-promo--meal" data-reveal><div><p>CRISPY, EVERY BITE TASTE</p><h2><em>FAST</em> Foods Meal</h2><OrderButton onClick={() => addToCart('h4-fast-food-combo', 'Fast foods meal')} /></div><img src={asset('food-table.webp')} alt="Fast food meal" /></article>
         </section>
 
         <section className="h4-hotwing-deal">
           <div className="h4-hotwing-deal__grid h4-shell" data-reveal>
             <div className="h4-hotwing-deal__photo"><img src={asset('wings.webp')} alt="Chicken hot wings and fries" /><span className="h4-hotwing-deal__cola">COLA</span><span className="h4-hotwing-deal__seal">HOT<br />TASTE</span></div>
-            <div className="h4-hotwing-deal__copy"><p className="h4-eyebrow"><span />CRISPY, EVERY BITE TASTE</p><h2>Kfc Chiken Hot Wing<br />&amp; French Fries</h2><p>Simple ingredients, generous taste and a limited-time price that makes every bite better.</p><div className="h4-countdown" aria-label="Offer countdown"><span><b>30</b><small>Days</small></span><span><b>22</b><small>Hours</small></span><span><b>48</b><small>Min</small></span><span><b>22</b><small>Sec</small></span></div><OrderButton onClick={() => addToCart('KFC chicken hot wing and french fries')} /></div>
+            <div className="h4-hotwing-deal__copy"><p className="h4-eyebrow"><span />CRISPY, EVERY BITE TASTE</p><h2>Kfc Chiken Hot Wing<br />&amp; French Fries</h2><p>Simple ingredients, generous taste and a limited-time price that makes every bite better.</p><div className="h4-countdown" aria-label="Offer countdown"><span><b>30</b><small>Days</small></span><span><b>22</b><small>Hours</small></span><span><b>48</b><small>Min</small></span><span><b>22</b><small>Sec</small></span></div><OrderButton onClick={() => addToCart('chicken-crunch', 'KFC chicken hot wing and french fries')} /></div>
           </div>
         </section>
 
@@ -442,7 +449,7 @@ export default function HomeFour() {
         </section>
 
         <section className="h4-delivery-banner">
-          <div className="h4-shell h4-delivery-banner__inner" data-reveal><div><p>WE DELIVER YOUR FAVOURITE FOOD</p><h2><em>30 Minutes</em> Fast<br />Delivery Challenge</h2><OrderButton className="h4-order-button--light" onClick={() => addToCart('TasteNest delivery')} /></div><div className="h4-delivery-banner__rider"><span className="h4-delivery-banner__wheel h4-delivery-banner__wheel--one" /><span className="h4-delivery-banner__wheel h4-delivery-banner__wheel--two" /><span className="h4-delivery-banner__box">HOT<br />FOOD</span><Truck /></div></div>
+          <div className="h4-shell h4-delivery-banner__inner" data-reveal><div><p>WE DELIVER YOUR FAVOURITE FOOD</p><h2><em>30 Minutes</em> Fast<br />Delivery Challenge</h2><OrderButton className="h4-order-button--light" onClick={() => addToCart('h4-fast-food-combo', 'TasteNest delivery')} /></div><div className="h4-delivery-banner__rider"><span className="h4-delivery-banner__wheel h4-delivery-banner__wheel--one" /><span className="h4-delivery-banner__wheel h4-delivery-banner__wheel--two" /><span className="h4-delivery-banner__box">HOT<br />FOOD</span><Truck /></div></div>
         </section>
 
         <section className="h4-gallery" id="journal" aria-label="TasteNest food gallery">

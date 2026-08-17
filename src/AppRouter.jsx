@@ -1,5 +1,15 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { ChevronDown, Grid2X2, X } from 'lucide-react'
+import { CartProvider } from './commerce/index.js'
+import {
+  CartPage,
+  CatalogPage,
+  CheckoutPage,
+  CommerceCartDrawer,
+  commerceTitles,
+  OrderConfirmationPage,
+  ProductDetailPage,
+} from './commerce/CommercePages.jsx'
 
 const HomeFour = lazy(() => import('./HomeFour.jsx'))
 const HomeFive = lazy(() => import('./App.jsx'))
@@ -27,6 +37,14 @@ const routeNames = Object.fromEntries(routeEntries.map(({ path, label }) => [pat
 function normalizePath(pathname) {
   if (!pathname || pathname === '/') return '/'
   return pathname.replace(/\/+$/, '') || '/'
+}
+
+function decodeRouteSegment(value) {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return value
+  }
 }
 
 function LoadingScreen() {
@@ -101,16 +119,23 @@ function ScreenNavigator({ pathname, onNavigate }) {
   )
 }
 
-export default function AppRouter() {
+function AppRouterContent() {
   const [pathname, setPathname] = useState(() => normalizePath(window.location.pathname))
+  const [cartOpen, setCartOpen] = useState(false)
 
   const navigate = useCallback((nextPath) => {
     const url = new URL(nextPath, window.location.origin)
     const next = normalizePath(url.pathname)
     if (next !== normalizePath(window.location.pathname)) window.history.pushState({}, '', next)
     setPathname(next)
+    setCartOpen(false)
     window.scrollTo({ top: 0, behavior: 'auto' })
   }, [])
+
+  useEffect(() => {
+    document.body.classList.toggle('tn-commerce-scroll-lock', cartOpen)
+    return () => document.body.classList.remove('tn-commerce-scroll-lock')
+  }, [cartOpen])
 
   useEffect(() => {
     const onPopState = () => setPathname(normalizePath(window.location.pathname))
@@ -119,7 +144,11 @@ export default function AppRouter() {
   }, [])
 
   const canonicalPath = pathname === '/' || pathname === '/designs' ? '/purchase' : pathname
+  const productMatch = canonicalPath.match(/^\/product\/([^/]+)$/)
+  const confirmationMatch = canonicalPath.match(/^\/order-confirmation\/([^/]+)$/)
   const pageName = routeNames[canonicalPath]
+    ?? commerceTitles[canonicalPath]
+    ?? (productMatch ? 'Food details' : confirmationMatch ? 'Order confirmed' : undefined)
   const metadata = useMemo(() => {
     if (!pageName) return { title: 'Screen not found | TasteNest', description: 'The requested TasteNest screen could not be found.' }
     return { title: `${pageName} | TasteNest Restaurant Collection`, description: `${pageName} from the complete TasteNest Figma collection.` }
@@ -145,16 +174,26 @@ export default function AppRouter() {
   }, [navigate])
 
   let screen = <NotFound onNavigate={navigate} />
-  if (canonicalPath === '/home-4') screen = <HomeFour />
-  else if (canonicalPath === '/home-5') screen = <HomeFive />
+  if (canonicalPath === '/menu') screen = <CatalogPage onNavigate={navigate} onOpenCart={() => setCartOpen(true)} />
+  else if (canonicalPath === '/cart') screen = <CartPage onNavigate={navigate} onOpenCart={() => setCartOpen(true)} />
+  else if (canonicalPath === '/checkout') screen = <CheckoutPage onNavigate={navigate} onOpenCart={() => setCartOpen(true)} />
+  else if (productMatch) screen = <ProductDetailPage productId={decodeRouteSegment(productMatch[1])} onNavigate={navigate} onOpenCart={() => setCartOpen(true)} />
+  else if (confirmationMatch) screen = <OrderConfirmationPage orderId={decodeRouteSegment(confirmationMatch[1])} onNavigate={navigate} onOpenCart={() => setCartOpen(true)} />
+  else if (canonicalPath === '/home-4') screen = <HomeFour onNavigate={navigate} onOpenCart={() => setCartOpen(true)} />
+  else if (canonicalPath === '/home-5') screen = <HomeFive onNavigate={navigate} onOpenCart={() => setCartOpen(true)} />
   else if (routeEntries.some((entry) => entry.path === canonicalPath && entry.path !== '/home-4' && entry.path !== '/home-5')) {
-    screen = <FigmaScreenRouter pathname={canonicalPath} onNavigate={navigate} />
+    screen = <FigmaScreenRouter pathname={canonicalPath} onNavigate={navigate} onOpenCart={() => setCartOpen(true)} />
   }
 
   return (
     <Suspense fallback={<LoadingScreen />}>
       {screen}
-      {pageName && <ScreenNavigator pathname={pathname} onNavigate={navigate} />}
+      {routeNames[canonicalPath] && <ScreenNavigator pathname={pathname} onNavigate={navigate} />}
+      <CommerceCartDrawer open={cartOpen} onClose={() => setCartOpen(false)} onNavigate={navigate} />
     </Suspense>
   )
+}
+
+export default function AppRouter() {
+  return <CartProvider><AppRouterContent /></CartProvider>
 }
